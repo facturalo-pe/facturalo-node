@@ -1,0 +1,30 @@
+name: Publish
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      # Trusted publishing (OIDC) requires npm 11.5.1 or newer.
+      - run: npm install -g npm@latest
+      - run: npm ci
+      - name: Publish if this version is not on npm yet
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "@facturalo-pe/node@$VERSION" version >/dev/null 2>&1; then
+            echo "@facturalo-pe/node@$VERSION is already published, skipping."
+          else
+            npm publish --access public
+          fi

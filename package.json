@@ -1,0 +1,60 @@
+{
+  "name": "@facturalo-pe/node",
+  "version": "1.0.0",
+  "description": "SDK oficial de Facturalo para Node.js: emite facturas, boletas, notas y guías de remisión ante SUNAT, consulta RUC/DNI y verifica webhooks.",
+  "license": "MIT",
+  "author": "Facturalo <soporte@facturalo.pe> (https://www.facturalo.pe)",
+  "homepage": "https://docs.facturalo.pe",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/facturalo-pe/facturalo-node.git"
+  },
+  "bugs": {
+    "url": "https://github.com/facturalo-pe/facturalo-node/issues"
+  },
+  "keywords": [
+    "facturalo",
+    "sunat",
+    "facturacion electronica",
+    "factura",
+    "boleta",
+    "guia de remision",
+    "peru",
+    "ubl"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
