@@ -45,8 +45,14 @@ export class HttpClient {
   }
 
   /** Devuelve `data` del sobre `{ success, message, data }`. */
-  async request<T>(method: HttpMethod, path: string, body?: unknown, query?: Query): Promise<T> {
-    const envelope = await this.send<Envelope<T>>(method, path, body, query);
+  async request<T>(
+    method: HttpMethod,
+    path: string,
+    body?: unknown,
+    query?: Query,
+    headers?: Record<string, string>,
+  ): Promise<T> {
+    const envelope = await this.send<Envelope<T>>(method, path, body, query, headers);
     return envelope.data as T;
   }
 
@@ -56,8 +62,9 @@ export class HttpClient {
     path: string,
     body?: unknown,
     query?: Query,
+    headers?: Record<string, string>,
   ): Promise<{ success: boolean; message: string; data: T }> {
-    const envelope = await this.send<Envelope<T>>(method, path, body, query);
+    const envelope = await this.send<Envelope<T>>(method, path, body, query, headers);
     return { success: envelope.success, message: envelope.message ?? "", data: envelope.data as T };
   }
 
@@ -74,17 +81,23 @@ export class HttpClient {
     return `${this.baseUrl}${path}`;
   }
 
-  private async send<T>(method: HttpMethod, path: string, body?: unknown, query?: Query): Promise<T> {
+  private async send<T>(
+    method: HttpMethod,
+    path: string,
+    body?: unknown,
+    query?: Query,
+    extraHeaders?: Record<string, string>,
+  ): Promise<T> {
     const headers: Record<string, string> = {
       // Facturalo no usa el esquema Bearer: el token va tal cual.
       Authorization: this.token,
       Accept: "application/json",
+      ...extraHeaders,
     };
     if (body !== undefined) headers["Content-Type"] = "application/json";
 
-    // Solo se reintentan lecturas. Un POST de envío nunca se repite a ciegas: podría emitir
-    // dos veces el mismo comprobante o chocar con el correlativo ya usado.
-    const canRetry = method === "GET";
+    // GET siempre se puede reintentar. POST solo si hay Idempotency-Key (el servidor deduplica).
+    const canRetry = method === "GET" || Boolean(headers["Idempotency-Key"]);
     const url = this.baseUrl + path + toQueryString(query);
 
     let lastError: unknown;

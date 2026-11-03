@@ -53,7 +53,10 @@ La respuesta solo identifica el comprobante. El detalle completo (cliente, total
 ## Sin esperar a SUNAT
 
 ```ts
-const envio = await facturalo.documentos.enviar(documento, { webhook: true });
+const envio = await facturalo.documentos.enviar(documento, {
+  webhook: true,
+  idempotencyKey: "orden-1042", // evita duplicar si reintentas el POST
+});
 // envio.estado === "EN_PROCESO": el resultado llega a tu webhook como documento.sunat.respuesta
 ```
 
@@ -86,6 +89,7 @@ await facturalo.consultas.tipoCambio("2026-10-30");
 // Webhooks enviados
 await facturalo.webhooks.listar({ estado: "error" });
 await facturalo.webhooks.reenviar(eventoId);
+// Si tu endpoint no responde 2xx, Facturalo reintenta el webhook hasta 5 veces.
 
 // SIRE (periodo YYYYMM)
 await facturalo.sire.ventas.resumen("202610");

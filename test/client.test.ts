@@ -74,6 +74,29 @@ describe("FacturaloClient", () => {
     expect(envio.documento.correlativo).toBe("00000001");
   });
 
+  it("envía Idempotency-Key al emitir un documento", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse(200, {
+        success: true,
+        message: "ok",
+        data: {
+          estado: "ACEPTADA",
+          entorno: "demo",
+          documento: { id: "uuid-1", estado: "ACEPTADA", serie: "F001", correlativo: "00000001", tipo: "FACTURA" },
+          sunat: { estado: "ACEPTADA", codigo: "0", mensaje: "ok", notas: [] },
+          enlaces: { pdf: "https://x/uuid-1.pdf" },
+        },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const client = new FacturaloClient({ token: TOKEN, baseUrl: BASE });
+    await client.documentos.enviar(factura, { idempotencyKey: "orden-1042" });
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect((init.headers as Record<string, string>)["Idempotency-Key"]).toBe("orden-1042");
+  });
+
   it("un rechazo de SUNAT no lanza: vuelve con estado RECHAZADA", async () => {
     vi.stubGlobal(
       "fetch",

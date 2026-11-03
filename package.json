@@ -1,9 +1,9 @@
 {
   "name": "@facturalo-pe/node",
-  "version": "1.0.1",
-  "description": "SDK oficial de Facturalo para Node.js: emite facturas, boletas, notas y guías de remisión ante SUNAT, consulta RUC/DNI y verifica webhooks.",
+  "version": "1.1.0",
+  "description": "SDK oficial de Facturalo para Node.js: emite facturas, boletas, notas y guías de remisión ante SUNAT, consulta RUC/DNI, idempotencia y verifica webhooks.",
   "license": "MIT",
-  "author": "Facturalo <soporte@facturalo.pe> (https://www.facturalo.pe)",
+  "author": "Facturalo <contacto@facturalo.pe> (https://www.facturalo.pe)",
   "homepage": "https://docs.facturalo.pe",
   "repository": {
     "type": "git",

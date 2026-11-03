@@ -171,6 +171,17 @@ export interface EnviarDocumentoOptions {
   webhook?: boolean;
   /** UUID del establecimiento que emite. */
   establecimiento?: string;
+  /**
+   * Clave de idempotencia (header `Idempotency-Key`). Misma clave + mismo cuerpo = misma respuesta
+   * durante 24 h. Recomendada si tu cliente puede reintentar el POST.
+   */
+  idempotencyKey?: string;
+}
+
+export interface EnviarGuiaOptions {
+  webhook?: boolean;
+  /** Clave de idempotencia (header `Idempotency-Key`). */
+  idempotencyKey?: string;
 }
 
 // Documentos: lo que vuelve

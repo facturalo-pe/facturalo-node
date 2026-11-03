@@ -1,5 +1,13 @@
 import { encode, type HttpClient } from "../http.js";
-import type { ConsultaGuia, EnvioGuia, Evento, GuiaInput, ListarGuiasParams, Paginacion } from "../types.js";
+import type {
+  ConsultaGuia,
+  EnviarGuiaOptions,
+  EnvioGuia,
+  Evento,
+  GuiaInput,
+  ListarGuiasParams,
+  Paginacion,
+} from "../types.js";
 
 /** Guías de remisión remitente (serie T...) y transportista (serie V...). */
 export class GuiasResource {
@@ -9,8 +17,17 @@ export class GuiasResource {
    * POST /guias/enviar: la serie decide el tipo (T... remitente 09, V... transportista 31).
    * Con `{ webhook: true }` responde `EN_PROCESO` y el resultado llega como `guia.sunat.respuesta`.
    */
-  async enviar(guia: GuiaInput, options: { webhook?: boolean } = {}): Promise<EnvioGuia> {
-    return this.http.request<EnvioGuia>("POST", "/guias/enviar", { webhook: options.webhook ?? false, guia });
+  async enviar(guia: GuiaInput, options: EnviarGuiaOptions = {}): Promise<EnvioGuia> {
+    const headers = options.idempotencyKey
+      ? { "Idempotency-Key": options.idempotencyKey }
+      : undefined;
+    return this.http.request<EnvioGuia>(
+      "POST",
+      "/guias/enviar",
+      { webhook: options.webhook ?? false, guia },
+      undefined,
+      headers,
+    );
   }
 
   /** GET /guias/{id}: la guía completa con su estado en SUNAT. */

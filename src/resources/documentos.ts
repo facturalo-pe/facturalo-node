@@ -30,11 +30,20 @@ export class DocumentosResource {
    * Con `{ webhook: true }` responde al instante con `estado: "EN_PROCESO"`.
    */
   async enviar(documento: DocumentoInput, options: EnviarDocumentoOptions = {}): Promise<EnvioDocumento> {
-    return this.http.request<EnvioDocumento>("POST", "/documentos/enviar", {
-      webhook: options.webhook ?? false,
-      ...(options.establecimiento ? { establecimiento: options.establecimiento } : {}),
-      documento,
-    });
+    const headers = options.idempotencyKey
+      ? { "Idempotency-Key": options.idempotencyKey }
+      : undefined;
+    return this.http.request<EnvioDocumento>(
+      "POST",
+      "/documentos/enviar",
+      {
+        webhook: options.webhook ?? false,
+        ...(options.establecimiento ? { establecimiento: options.establecimiento } : {}),
+        documento,
+      },
+      undefined,
+      headers,
+    );
   }
 
   /** POST /documentos/xml: genera y firma el XML sin enviarlo a SUNAT (`estado: "XML_GENERADO"`). */
