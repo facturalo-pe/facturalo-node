@@ -85,6 +85,8 @@ await facturalo.guias.listar({ pagina: 1 });
 await facturalo.consultas.ruc("20601476551");
 await facturalo.consultas.dni("12345678");
 await facturalo.consultas.tipoCambio("2026-10-30");
+// Código de producto SUNAT para un ítem, por su descripción
+await facturalo.consultas.codigoProductoSunat("laptop core i5", { limite: 3 });
 
 // Webhooks enviados
 await facturalo.webhooks.listar({ estado: "error" });

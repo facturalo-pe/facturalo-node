@@ -2,7 +2,7 @@ import { encode, type HttpClient } from "../http.js";
 
 type Datos = Record<string, unknown>;
 
-/** Consultas de RUC, DNI, tipo de cambio y vehículos. Aceptan token de empresa o de usuario. */
+/** Consultas de RUC, DNI, tipo de cambio, vehículos y código de producto SUNAT. Aceptan token de empresa o de usuario. */
 export class ConsultasResource {
   constructor(private readonly http: HttpClient) {}
 
@@ -39,6 +39,18 @@ export class ConsultasResource {
   /** GET /consulta/placa/{placa}/soat */
   async soat(placa: string): Promise<Datos> {
     return this.http.request("GET", `/consulta/placa/${encode(placa)}/soat`);
+  }
+
+  /**
+   * GET /catalogos/productos-sunat: código de producto SUNAT (catálogo UNSPSC de 8 dígitos) a partir
+   * de una descripción ("laptop core i5", "servicio de instalación"). Búsqueda semántica sobre el CUBSO.
+   * Úsalo para completar `codigoProductoSunat` de cada ítem.
+   */
+  async codigoProductoSunat(
+    descripcion: string,
+    opciones: { tipo?: "bien" | "servicio" | "obra" | "consultoria_obra"; limite?: number } = {},
+  ): Promise<Datos> {
+    return this.http.request("GET", "/catalogos/productos-sunat", undefined, { q: descripcion, tipo: opciones.tipo, limite: opciones.limite });
   }
 
   /** GET /consulta/licencia/{dni} */
