@@ -50,6 +50,20 @@ Un rechazo de SUNAT no lanza excepción: llega con `estado: "RECHAZADA"` y el mo
 
 La respuesta solo identifica el comprobante. El detalle completo (cliente, totales, ítems) se obtiene con `documentos.consultar(id)`.
 
+## Exonerada en la Amazonía (Ley 27037)
+
+Empresas de la Amazonía que venden para consumo en la misma región: ítems con `tipoIgv: "20"` y `amazonia`, que agrega la leyenda de SUNAT (`"bienes"` → 2001, `"servicios"` → 2002, `"construccion"` → 2003). Sirve en facturas y boletas.
+
+```ts
+await facturalo.documentos.enviar({
+  ...documento,
+  amazonia: "bienes",
+  items: [{ unidadMedida: "NIU", descripcion: "ARROZ COSTEÑO 5KG", cantidad: 10, precioUnitario: 25, tipoIgv: "20" }],
+});
+```
+
+Sin ningún ítem exonerado la API responde 422 (SUNAT lo rechazaría con 3283/3284/3285).
+
 ## Sin esperar a SUNAT
 
 ```ts
