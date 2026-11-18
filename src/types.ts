@@ -152,6 +152,11 @@ export interface DocumentoInput {
   notificarCorreo?: boolean;
   observaciones?: string;
   placaVehiculo?: string;
+  /**
+   * Exoneración del IGV en la Amazonía (Ley 27037): agrega la leyenda SUNAT 2001/2002/2003.
+   * Solo factura/boleta y con al menos un ítem tipoIgv "20".
+   */
+  amazonia?: "bienes" | "servicios" | "construccion";
   ordenCompra?: string;
   /** Campos libres que salen en el PDF y la consulta. No van a SUNAT. */
   otrosCampos?: CampoLibre[];
