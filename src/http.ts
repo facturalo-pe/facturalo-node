@@ -19,6 +19,7 @@ export interface HttpOptions {
 interface Envelope<T> {
   success: boolean;
   message?: string;
+  code?: string;
   data?: T;
   errors?: ValidationErrors;
 }
@@ -124,6 +125,7 @@ export class HttpClient {
       const apiError = errorForStatus({
         status: response.status,
         message: parsed?.message ?? response.statusText,
+        code: typeof parsed?.code === "string" ? parsed.code : undefined,
         errors: parsed?.errors,
         body: parsed,
       });

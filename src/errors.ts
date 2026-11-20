@@ -7,9 +7,35 @@ export type ValidationErrors = Record<
   string[] | { mensaje: string; valoresValidos?: { codigo: string; nombre: string }[] }
 >;
 
+/**
+ * Códigos (`code`) que la API envía en errores de plan y acceso. Puede llegar otro código nuevo:
+ * por eso `FacturaloApiError.code` es `string`.
+ *
+ * - 402 `BILLING_REQUIRED` / `BILLING_SUSPENDED` / `QUOTA_EXCEEDED` / `SALDO_INSUFICIENTE` / `PLAN_SIN_GUIAS`
+ * - 403 `PLAN_SIN_API`: el plan Gratis no incluye la API de producción (`sk_live_`); está incluida en
+ *   los planes de pago de Facturalo ERP (Básico, Pro, Negocio) y en los de Facturalo API. En demo (`sk_test_`) la API está abierta en todos los planes.
+ * - 403 `PLAN_SOLO_API` / `CLAVE_SOLO_WOOCOMMERCE` / `SIN_PERMISO` / `SIN_ACCESO`
+ * - 422 `PLAN_NO_DISPONIBLE`: una empresa con plan de Facturalo ERP intentó contratar un plan de Facturalo API
+ *   (su plan de pago ya incluye la API); al cotizar o suscribirse.
+ */
+export type FacturaloErrorCode =
+  | "BILLING_REQUIRED"
+  | "BILLING_SUSPENDED"
+  | "QUOTA_EXCEEDED"
+  | "SALDO_INSUFICIENTE"
+  | "PLAN_SIN_GUIAS"
+  | "PLAN_SIN_API"
+  | "PLAN_SOLO_API"
+  | "PLAN_NO_DISPONIBLE"
+  | "CLAVE_SOLO_WOOCOMMERCE"
+  | "SIN_PERMISO"
+  | "SIN_ACCESO";
+
 export interface FacturaloApiErrorOptions {
   status: number;
   message: string;
+  /** `code` de la respuesta, si la API lo envía (p. ej. `PLAN_SIN_API`). */
+  code?: string;
   errors?: ValidationErrors;
   /** Cuerpo completo de la respuesta, por si necesitas algo más. */
   body?: unknown;
@@ -18,6 +44,8 @@ export interface FacturaloApiErrorOptions {
 /** Error base de la API: cualquier respuesta HTTP fuera de 2xx lanza esto o una subclase. */
 export class FacturaloApiError extends Error {
   readonly status: number;
+  /** `code` de la respuesta (ver `FacturaloErrorCode`), o `undefined` si no vino. */
+  readonly code?: FacturaloErrorCode | (string & {});
   readonly errors: ValidationErrors;
   readonly body?: unknown;
 
@@ -25,6 +53,7 @@ export class FacturaloApiError extends Error {
     super(options.message);
     this.name = "FacturaloApiError";
     this.status = options.status;
+    this.code = options.code;
     this.errors = options.errors ?? {};
     this.body = options.body;
     Object.setPrototypeOf(this, new.target.prototype);
@@ -40,7 +69,7 @@ export class FacturaloAuthenticationError extends FacturaloApiError {
   }
 }
 
-/** 403: el token es válido pero no puede hacer esto. */
+/** 403: el token es válido pero no puede hacer esto (p. ej. `code: "PLAN_SIN_API"` en el plan Gratis). */
 export class FacturaloPermissionError extends FacturaloApiError {
   constructor(options: FacturaloApiErrorOptions) {
     super(options);

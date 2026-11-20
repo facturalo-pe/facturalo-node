@@ -5,6 +5,7 @@ import {
   FacturaloAuthenticationError,
   FacturaloConnectionError,
   FacturaloNotFoundError,
+  FacturaloPermissionError,
   FacturaloValidationError,
 } from "../src/errors.js";
 import type { DocumentoInput } from "../src/types.js";
@@ -142,6 +143,45 @@ describe("FacturaloClient", () => {
     await expect(new FacturaloClient({ token: TOKEN }).documentos.consultar("x")).rejects.toBeInstanceOf(
       FacturaloNotFoundError,
     );
+  });
+
+  it("expone el code de la API en errores de plan (PLAN_SIN_API)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        jsonResponse(403, {
+          success: false,
+          code: "PLAN_SIN_API",
+          message: "El plan Gratis no incluye la API. Está incluida en los planes Básico, Pro y Negocio.",
+        }),
+      ),
+    );
+    const promise = new FacturaloClient({ token: "sk_live_x" }).documentos.enviar(factura);
+    await expect(promise).rejects.toBeInstanceOf(FacturaloPermissionError);
+    await promise.catch((err: FacturaloPermissionError) => {
+      expect(err.status).toBe(403);
+      expect(err.code).toBe("PLAN_SIN_API");
+    });
+  });
+
+  it("envía percepción, tipo de cambio y otros cargos tal cual", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse(200, { success: true, message: "ok", data: { estado: "ACEPTADA", documento: { id: "u" } } }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const documento: DocumentoInput = {
+      ...factura,
+      moneda: "USD",
+      tipoCambio: 3.75,
+      percepcion: { tipo: "51" },
+      totalOtrosCargos: 10,
+    };
+    await new FacturaloClient({ token: TOKEN, baseUrl: BASE }).documentos.enviar(documento);
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(init.body as string);
+    expect(body.documento.tipoCambio).toBe(3.75);
+    expect(body.documento.percepcion).toEqual({ tipo: "51" });
+    expect(body.documento.totalOtrosCargos).toBe(10);
   });
 
   it("reintenta las consultas ante 503 pero nunca un envío", async () => {

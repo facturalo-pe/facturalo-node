@@ -15,6 +15,7 @@ export {
   FacturaloConnectionError,
   FacturaloSignatureVerificationError,
   type ValidationErrors,
+  type FacturaloErrorCode,
 } from "./errors.js";
 export type { LibroSire } from "./resources/sire.js";
 export type * from "./types.js";

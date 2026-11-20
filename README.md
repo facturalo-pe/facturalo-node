@@ -64,6 +64,28 @@ await facturalo.documentos.enviar({
 
 Sin ningún ítem exonerado la API responde 422 (SUNAT lo rechazaría con 3283/3284/3285).
 
+## Percepción, retención, otros cargos y dólares
+
+```ts
+// Percepción del IGV (51 = 2%, 52 = 1%, 53 = 0.5%): solo al contado, en facturas y boletas.
+// Facturalo pone la operación 2001 y calcula la percepción en soles.
+await facturalo.documentos.enviar({ ...documento, percepcion: { tipo: "51" } });
+
+// Retención del IGV (código 62, 3%): solo facturas a un cliente con RUC.
+await facturalo.documentos.enviar({ ...documento, retencion: { tipo: "62", porcentaje: 3 } });
+
+// Otros cargos globales (código 50): no forman parte de la base del IGV y se suman al total.
+await facturalo.documentos.enviar({ ...documento, totalOtrosCargos: 15 });
+
+// En dólares con bolsas (ICBPER) o percepción, envía el tipo de cambio.
+await facturalo.documentos.enviar({ ...documento, moneda: "USD", tipoCambio: 3.75 });
+```
+
+- Percepción, retención y detracción no se combinan entre sí: la API responde 422.
+- Al crédito con cliente RUC, las `cuotas` deben sumar total + ICBPER + otros cargos − anticipos − detracción − retención.
+- `tipoIgv: "17"` es IVAP (arroz pilado, 4%): ese comprobante solo lleva ítems con IVAP.
+- El ISC todavía no se emite por la API: `totalIsc` mayor a 0 responde 422.
+
 ## Sin esperar a SUNAT
 
 ```ts
@@ -155,10 +177,36 @@ await cuenta.establecimientos.crear(empresa.id, { nombre, direccion, departament
 |---|---|
 | `FacturaloValidationError` | 400 / 422. `err.errors` trae los errores por campo |
 | `FacturaloAuthenticationError` | 401: token inválido o regenerado |
+| `FacturaloPermissionError` | 403: el token no puede hacer esto. `err.code` dice por qué (p. ej. `PLAN_SIN_API`) |
 | `FacturaloNotFoundError` | 404: no existe en este entorno |
 | `FacturaloRateLimitError` | 429 |
 | `FacturaloConnectionError` | Red o timeout (default 90 s) |
-| `FacturaloApiError` | Clase base de las anteriores, con `status` y `body` |
+| `FacturaloApiError` | Clase base de las anteriores, con `status`, `code` y `body`. Los 402 de plan llegan como esta clase |
+
+Errores de plan (`err.code`):
+
+| `code` | HTTP | Qué significa |
+|---|---|---|
+| `PLAN_SIN_API` | 403 | El plan Gratis no incluye la API de producción (`sk_live_`). Está incluida en los planes de pago de Facturalo ERP (Básico, Pro, Negocio) y en los de Facturalo API. En demo (`sk_test_`) la API funciona en todos los planes |
+| `PLAN_SOLO_API` | 403 | Tu plan API no incluye los módulos de negocio (inventario, compras, cajas...) |
+| `CLAVE_SOLO_WOOCOMMERCE` | 403 | La clave del plugin de WooCommerce solo sirve para emitir y consultar un comprobante |
+| `BILLING_REQUIRED` / `BILLING_SUSPENDED` | 402 | Sin plan activo, o pendiente de pago |
+| `QUOTA_EXCEEDED` / `SALDO_INSUFICIENTE` | 402 | Se usó el cupo del mes y no hay saldo |
+| `PLAN_SIN_GUIAS` | 402 | El plan no incluye guías de remisión |
+| `PLAN_NO_DISPONIBLE` | 422 | Una empresa con plan de Facturalo ERP intentó contratar un plan de Facturalo API (su plan de pago ya incluye la API) |
+
+```ts
+import { FacturaloPermissionError } from "@facturalo-pe/node";
+
+try {
+  await facturalo.documentos.enviar(documento);
+} catch (err) {
+  if (err instanceof FacturaloPermissionError && err.code === "PLAN_SIN_API") {
+    // Elige un plan Básico, Pro o Negocio en console.facturalo.pe/plan/planes
+  }
+  throw err;
+}
+```
 
 Las consultas (`GET`) se reintentan solas ante 429/5xx y fallos de red. Los envíos nunca se reintentan automáticamente, para no emitir dos veces el mismo comprobante.
 

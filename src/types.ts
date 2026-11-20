@@ -69,14 +69,20 @@ export interface ItemInput {
   cantidad: number;
   /** Precio unitario CON IGV. Facturalo calcula valor unitario, IGV y totales. */
   precioUnitario: number;
-  /** Catálogo 07: 10 gravado · 20 exonerado · 30 inafecto · 40 exportación · 11-16/21/31-37 gratuitas. */
+  /**
+   * Catálogo 07: 10 gravado · 17 IVAP (arroz pilado, 4%) · 20 exonerado · 30 inafecto · 40 exportación ·
+   * 11-16/21/31-37 gratuitas. Un comprobante con IVAP solo lleva ítems 17.
+   */
   tipoIgv: string;
   codigo?: string;
   /** Obligatorio en exportación (sunatTransaccion 0200). */
   codigoSunat?: string;
   codigoProductoSunat?: string;
   descuento?: number;
-  /** Aplica el impuesto a las bolsas plásticas (ICBPER). */
+  /**
+   * Aplica el impuesto a las bolsas plásticas (ICBPER, S/ 0.50 por bolsa). En dólares exige
+   * `tipoCambio` en el documento.
+   */
   icbper?: boolean;
 }
 
@@ -120,9 +126,28 @@ export interface DetraccionInput {
   monto?: number;
 }
 
+/**
+ * Retención del IGV (catálogo 53, código 62, 3%). Solo en facturas (01) a un cliente con RUC y nunca
+ * junto a detracción o percepción. Base = importe total a pagar; el monto se resta de lo que
+ * deben sumar las cuotas al crédito.
+ */
 export interface RetencionInput {
-  tipo?: string;
+  /** Siempre "62" (es el valor por defecto). */
+  tipo?: "62";
+  /** Siempre 3 (es el valor por defecto); otro valor responde 422. */
   porcentaje?: number;
+}
+
+/** Catálogo 53: 51 venta interna (2%) · 52 combustible (1%) · 53 agente de percepción con tasa especial (0.5%). */
+export type TipoPercepcion = "51" | "52" | "53";
+
+/**
+ * Percepción del IGV. Solo facturas y boletas al CONTADO, sin detracción ni retención. Facturalo
+ * fija la operación 2001 (si enviaste 0101) y calcula base, monto y total a cobrar, siempre en
+ * soles: en dólares exige `tipoCambio`.
+ */
+export interface PercepcionInput {
+  tipo: TipoPercepcion;
 }
 
 export interface DocumentoInput {
@@ -139,7 +164,10 @@ export interface DocumentoInput {
   moneda: Moneda;
   cliente: ClienteInput;
   items: ItemInput[];
-  /** Obligatorio con formaPago CREDITO. */
+  /**
+   * Obligatorio con formaPago CREDITO. Con cliente RUC deben sumar el monto neto pendiente: total +
+   * ICBPER + otros cargos − anticipos − detracción − retención (si no, 422).
+   */
   cuotas?: CuotaInput[];
   guias?: GuiaRelacionadaInput[];
   anticipos?: AnticipoInput[];
@@ -147,6 +175,12 @@ export interface DocumentoInput {
   nota?: NotaInput;
   detraccion?: DetraccionInput;
   retencion?: RetencionInput;
+  percepcion?: PercepcionInput;
+  /**
+   * Tipo de cambio del comprobante en moneda extranjera. Obligatorio en dólares si hay ítems con
+   * `icbper` o `percepcion`.
+   */
+  tipoCambio?: number;
   /** UUID del establecimiento que emite. */
   establecimiento?: string;
   notificarCorreo?: boolean;
@@ -162,7 +196,12 @@ export interface DocumentoInput {
   otrosCampos?: CampoLibre[];
   descuentoGlobal?: number;
   totalAnticipo?: number;
+  /**
+   * Otros cargos globales (catálogo 53, código 50): no afectan la base del IGV y se suman al total.
+   * Solo facturas y boletas.
+   */
   totalOtrosCargos?: number;
+  /** El ISC aún no se emite por la API: envía 0 u omítelo (un valor mayor a 0 responde 422). */
   totalIsc?: number;
   /** 18 (por defecto) o 10 (régimen MYPE restaurantes y hoteles). */
   porcentajeIgv?: 10 | 18;
