@@ -16,6 +16,7 @@ import type {
 const EXTENSION: Record<FormatoArchivo, string> = {
   pdf: ".pdf",
   ticket: ".ticket.pdf",
+  ticket58: ".ticket.pdf?ancho=58",
   xml: ".xml",
   cdr: ".cdr",
 };
@@ -110,7 +111,7 @@ export class DocumentosResource {
     return this.http.fileUrl(`/documentos/${encode(id)}${EXTENSION[formato]}`);
   }
 
-  /** Descarga el PDF (A4 o ticket), el XML firmado o el CDR de SUNAT. */
+  /** Descarga el PDF (A4 o ticket de 80 o 58 mm), el XML firmado o el CDR de SUNAT. */
   async descargar(id: string, formato: FormatoArchivo = "pdf"): Promise<Buffer> {
     return this.http.download(this.urlArchivo(id, formato));
   }

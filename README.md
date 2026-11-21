@@ -109,7 +109,7 @@ await facturalo.documentos.anular({ tipoComprobante: "01", serie: "F001", correl
 await facturalo.documentos.reenviar(id);
 await facturalo.documentos.eventos(id);
 await facturalo.documentos.eliminar(id);                     // solo NO_ENVIADA
-const pdf = await facturalo.documentos.descargar(id, "pdf"); // devuelve un Buffer; también "ticket", "xml" o "cdr"
+const pdf = await facturalo.documentos.descargar(id, "pdf"); // devuelve un Buffer; también "ticket" (80 mm), "ticket58" (58 mm), "xml" o "cdr"
 
 // Guías de remisión (serie T... remitente, V... transportista)
 await facturalo.guias.enviar(guia, { webhook });

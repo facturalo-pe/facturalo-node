@@ -42,7 +42,10 @@ export interface RespuestaSunat {
 
 export interface EnlacesDocumento {
   pdf?: string;
+  /** PDF ticket para impresora térmica de 80 mm. */
   pdfTicket?: string;
+  /** PDF ticket para impresora térmica de 58 mm. */
+  pdfTicket58?: string;
   xml?: string;
   /** Solo cuando SUNAT aceptó el comprobante. */
   cdr?: string;
@@ -360,7 +363,8 @@ export interface Anulacion {
   };
 }
 
-export type FormatoArchivo = "pdf" | "ticket" | "xml" | "cdr";
+/** `ticket`: rollo de 80 mm; `ticket58`: rollo de 58 mm. */
+export type FormatoArchivo = "pdf" | "ticket" | "ticket58" | "xml" | "cdr";
 
 // Guías de remisión
 
